@@ -2,148 +2,214 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>두바이 쫀득 쿠키 메이커</title>
+    <title>두바이 쫀득 쿠키 장인 - 파이널 에디션</title>
     <style>
-        /* CSS: 게임의 디자인 */
-        :root {
-            --pistachio: #93c47d;
-            --chocolate: #4e342e;
-            --gold: #f1c232;
-        }
-
-        body {
-            background-color: #fdf5e6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-        }
-
-        .game-container {
-            text-align: center;
-            background: white;
-            padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            width: 350px;
-        }
-
-        h1 { color: var(--chocolate); font-size: 24px; margin-bottom: 10px; }
-
-        #cookie-stage {
-            font-size: 120px;
-            height: 160px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 20px 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            user-select: none;
-        }
-
-        .bounce { transform: scale(1.1); }
-
-        #status-msg {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 25px;
-            min-height: 24px;
-        }
-
-        #action-btn {
-            background-color: var(--pistachio);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #6d9e5a;
-            transition: 0.1s;
-        }
-
-        #action-btn:active {
-            transform: translateY(4px);
-            box-shadow: none;
-        }
-
-        .score-board {
-            margin-top: 30px;
-            font-size: 16px;
-            color: var(--chocolate);
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-
-        #count { font-weight: bold; font-size: 20px; color: #e67e22; }
+        :root { --pista: #93c47d; --choco: #4e342e; --butter: #f1c232; --cocoa: #3d2b1f; }
+        body { background: #2c3e50; color: white; font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        #game-container { background: #fff; color: #333; width: 600px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        .screen { display: none; min-height: 450px; flex-direction: column; align-items: center; justify-content: center; }
+        .active { display: flex; }
+        
+        .gauge-container { width: 100%; height: 25px; background: #eee; border-radius: 15px; margin: 15px 0; position: relative; overflow: hidden; border: 2px solid #ddd; }
+        .gauge-fill { height: 100%; width: 0%; background: var(--pista); transition: width 0.1s; }
+        .target-zone { position: absolute; top: 0; height: 100%; background: rgba(255, 165, 0, 0.4); border-left: 3px solid orange; border-right: 3px solid orange; }
+        
+        button { padding: 12px 30px; font-size: 18px; cursor: pointer; border-radius: 10px; border: none; background: var(--choco); color: white; font-weight: bold; }
+        button:hover { transform: scale(1.05); }
+        
+        .fire-controls button { margin: 5px; width: 80px; background: #95a5a6; }
+        .selected-fire { background: #e74c3c !important; box-shadow: 0 0 15px rgba(231, 76, 60, 0.6); }
+        
+        canvas { border: 3px solid #f0f0f0; border-radius: 10px; background: #fafafa; margin-top: 10px; cursor: crosshair; }
+        .status-info { font-weight: bold; color: #e67e22; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="game-container">
-        <h1>Dubai Cookie Maker</h1>
-        
-        <div id="cookie-stage">🥣</div>
-        <p id="status-msg">준비 단계: 재료를 모으세요!</p>
-        
-        <button id="action-btn" onclick="process()">카다이프 볶기</button>
-
-        <div class="score-board">
-            오늘 만든 쿠키: <span id="count">0</span>개
+<h1>Dubai Cookie Artisan</h1>
+<div id="game-container">
+    <div id="step1" class="screen active">
+        <h2>STEP 1: 카다이프 오븐 굽기</h2>
+        <p>최적의 갈색이 되었을 때 꺼내세요! (70-85% 구간)</p>
+        <div class="gauge-container">
+            <div id="oven-gauge" class="gauge-fill"></div>
+            <div class="target-zone" style="left: 70%; width: 15%;"></div>
         </div>
+        <button onclick="finishStep1()">지금 꺼내기!</button>
     </div>
 
-    <script>
-        /* JavaScript: 게임 로직 */
-        let currentStep = 0;
-        let totalCookies = 0;
+    <div id="step2" class="screen">
+        <h2>STEP 2: 버터 볶기 (불 조절)</h2>
+        <p class="status-info">반드시 '약불'로 설정하고 볶으세요!</p>
+        <div class="fire-controls">
+            <button id="fire-low" onclick="setFire(1)">약불</button>
+            <button id="fire-mid" onclick="setFire(2)">중불</button>
+            <button id="fire-high" onclick="setFire(3)">강불</button>
+        </div>
+        <canvas id="fry-canvas" width="450" height="200"></canvas>
+        <div class="gauge-container"><div id="fry-gauge" class="gauge-fill"></div></div>
+    </div>
 
-        const steps = [
-            { img: "🔥", msg: "카다이프를 버터에 볶는 중...", btn: "피스타치오 섞기" },
-            { img: "💚", msg: "피스타치오 스프레드 듬뿍!", btn: "초콜릿 입히기" },
-            { img: "🍫", msg: "초콜릿으로 두껍게 코팅해요.", btn: "냉장고에 넣기" },
-            { img: "❄️", msg: "차갑게 굳혀서 쫀득하게!", btn: "꺼내기" },
-            { img: "🍪", msg: "와! 환상적인 두바이 쿠키 완성!", btn: "상자에 담기" }
-        ];
+    <div id="step3" class="screen">
+        <h2>STEP 3: 스프레드 넣고 부수기</h2>
+        <p>마우스로 마구 클릭하거나 문질러서 잘게 부수세요!</p>
+        <canvas id="crush-canvas" width="450" height="200"></canvas>
+        <div class="gauge-container"><div id="crush-gauge" class="gauge-fill"></div></div>
+    </div>
 
-        function process() {
-            const stage = document.getElementById('cookie-stage');
-            const msg = document.getElementById('status-msg');
-            const btn = document.getElementById('action-btn');
-            const countDisplay = document.getElementById('count');
+    <div id="step4" class="screen">
+        <h2>STEP 4: 마시멜로 녹여 섞기</h2>
+        <p>휘저어서 마시멜로, 가루들을 완전히 녹이세요!</p>
+        <canvas id="melt-canvas" width="450" height="200"></canvas>
+        <div class="gauge-container"><div id="melt-gauge" class="gauge-fill"></div></div>
+    </div>
 
-            // 애니메이션 효과
-            stage.classList.remove('bounce');
-            void stage.offsetWidth; // 리플로우 강제 발생
-            stage.classList.add('bounce');
+    <div id="step5" class="screen">
+        <h2>STEP 5: 둥글게 빚고 코코아 묻히기</h2>
+        <p id="roll-hint" class="status-info">마우스를 크게 원을 그리며 둥글게 빚으세요! (3바퀴)</p>
+        <canvas id="roll-canvas" width="450" height="250"></canvas>
+        <div class="gauge-container"><div id="roll-gauge" class="gauge-fill" style="background: var(--cocoa);"></div></div>
+    </div>
 
-            if (currentStep < steps.length) {
-                // 단계별 진행
-                stage.innerText = steps[currentStep].img;
-                msg.innerText = steps[currentStep].msg;
-                btn.innerText = steps[currentStep].btn;
-                
-                // 완성 단계에 도달했을 때 색상 변경
-                if(currentStep === 4) btn.style.backgroundColor = "#e67e22";
-                
-                currentStep++;
-            } else {
-                // 한 개 완성 완료
-                totalCookies++;
-                countDisplay.innerText = totalCookies;
-                
-                // 초기화
-                currentStep = 0;
-                stage.innerText = "🥣";
-                msg.innerText = "하나 더 만들어볼까요?";
-                btn.innerText = "카다이프 볶기";
-                btn.style.backgroundColor = "#93c47d";
+    <div id="result-screen" class="screen">
+        <h2>장인의 최종 평가</h2>
+        <h1 id="total-grade" style="font-size: 80px; color: var(--choco);">?</h1>
+        <p id="comment" style="font-size: 18px; line-height: 1.6;"></p>
+        <button onclick="location.reload()">새 쿠키 만들기</button>
+    </div>
+</div>
+
+<script>
+    let scores = { step1: 0, step2: 0, step3: 0, step4: 0, step5: 0 };
+    let currentFire = 0;
+
+    // STEP 1 로직
+    let ovenVal = 0;
+    let ovenInterval = setInterval(() => {
+        ovenVal += 0.4;
+        document.getElementById('oven-gauge').style.width = ovenVal + '%';
+        if(ovenVal >= 100) finishStep1();
+    }, 50);
+    function finishStep1() {
+        clearInterval(ovenInterval);
+        scores.step1 = (ovenVal >= 70 && ovenVal <= 85) ? 100 : (ovenVal < 70 ? 50 : 30);
+        nextStep(1, 2); initStep2();
+    }
+
+    // STEP 2 로직
+    function setFire(f) {
+        currentFire = f;
+        document.querySelectorAll('.fire-controls button').forEach(b => b.classList.remove('selected-fire'));
+        const ids = ['', 'fire-low', 'fire-mid', 'fire-high'];
+        document.getElementById(ids[f]).classList.add('selected-fire');
+    }
+    function initStep2() {
+        const canvas = document.getElementById('fry-canvas');
+        const ctx = canvas.getContext('2d');
+        let prog = 0;
+        canvas.onmousemove = () => {
+            if(currentFire === 0) return;
+            prog += 0.5;
+            document.getElementById('fry-gauge').style.width = Math.min(prog, 100) + '%';
+            ctx.fillStyle = currentFire === 1 ? '#f1c232' : '#8e44ad';
+            ctx.fillRect(Math.random()*450, Math.random()*200, 8, 8);
+            if(prog >= 100) { scores.step2 = (currentFire === 1) ? 100 : 30; nextStep(2, 3); initStep3(); }
+        };
+    }
+
+    // STEP 3 로직
+    function initStep3() {
+        const canvas = document.getElementById('crush-canvas');
+        const ctx = canvas.getContext('2d');
+        let prog = 0;
+        canvas.onmousemove = () => {
+            prog += 0.4;
+            document.getElementById('crush-gauge').style.width = Math.min(prog, 100) + '%';
+            ctx.fillStyle = '#6d9e5a';
+            ctx.beginPath(); ctx.arc(Math.random()*450, Math.random()*200, 4, 0, Math.PI*2); ctx.fill();
+        };
+        setTimeout(() => { scores.step3 = prog >= 95 ? 100 : Math.max(0, prog); nextStep(3, 4); initStep4(); }, 5000);
+    }
+
+    // STEP 4 로직
+    function initStep4() {
+        const canvas = document.getElementById('melt-canvas');
+        const ctx = canvas.getContext('2d');
+        let prog = 0;
+        canvas.onmousemove = () => {
+            prog += 0.6;
+            document.getElementById('melt-gauge').style.width = Math.min(prog, 100) + '%';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.beginPath(); ctx.arc(Math.random()*450, Math.random()*200, 20, 0, Math.PI*2); ctx.fill();
+            if(prog >= 100) { scores.step4 = 100; nextStep(4, 5); initStep5(); }
+        };
+        setTimeout(() => { if(prog < 100) { scores.step4 = prog; nextStep(4, 5); initStep5(); } }, 6000);
+    }
+
+    // STEP 5 로직 (원 그리기 감지 핵심)
+    function initStep5() {
+        const canvas = document.getElementById('roll-canvas');
+        const ctx = canvas.getContext('2d');
+        let lastAngle = null;
+        let totalRotation = 0;
+        let prog = 0;
+        const centerX = 225, centerY = 125;
+
+        canvas.onmousemove = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 중심점으로부터의 각도 계산
+            const angle = Math.atan2(y - centerY, x - centerX);
+            
+            if (lastAngle !== null) {
+                let delta = angle - lastAngle;
+                // 각도 변화량 보정
+                if (delta > Math.PI) delta -= Math.PI * 2;
+                if (delta < -Math.PI) delta += Math.PI * 2;
+                totalRotation += Math.abs(delta);
             }
-        }
-    </script>
+            lastAngle = angle;
+
+            // 회전량에 따라 진행도 상승 (한 바퀴 = 2 * PI)
+            prog = (totalRotation / (Math.PI * 6)) * 100; // 3바퀴 목표
+            document.getElementById('roll-gauge').style.width = Math.min(prog, 100) + '%';
+
+            // 그리기 효과 (코코아 가루 묻히기)
+            ctx.fillStyle = '#3d2b1f';
+            ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI*2); ctx.fill();
+
+            if (prog >= 100) {
+                scores.step5 = 100;
+                finishGame();
+            }
+        };
+        // 시간 제한 내에 못하면 감점
+        setTimeout(() => { if(prog < 100) { scores.step5 = prog; finishGame(); } }, 8000);
+    }
+
+    function nextStep(curr, next) {
+        document.getElementById('step' + curr).classList.remove('active');
+        document.getElementById('step' + next).classList.add('active');
+    }
+
+    function finishGame() {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('result-screen').classList.add('active');
+        
+        const finalScore = (scores.step1 + scores.step2 + scores.step3 + scores.step4 + scores.step5) / 5;
+        let grade = "C";
+        let comment = "";
+
+        if(finalScore > 90) { grade = "S"; comment = "전설적인 두바이 쿠키 장인이 탄생했습니다! 완벽해요!"; }
+        else if(finalScore > 75) { grade = "A"; comment = "매우 훌륭합니다! 쫀득한 식감이 살아있네요."; }
+        else if(finalScore > 50) { grade = "B"; comment = "괜찮은 수준이지만, 기술적인 보완이 필요합니다."; }
+        else { grade = "F"; comment = "쿠키가 엉망이에요... 다시 연습하세요!"; }
+
+        document.getElementById('total-grade').innerText = grade;
+        document.getElementById('comment').innerHTML = `최종 점수: ${Math.floor(finalScore)}점<br>${comment}`;
+    }
+</script>
 </body>
 </html>
