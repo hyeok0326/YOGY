@@ -3,185 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subway Escape</title>
+    <title>Escape</title>
     <style>
-        body { 
-            margin: 0; background-color: #000; color: #eee; 
-            font-family: 'Courier New', Courier, monospace; 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; overflow: hidden;
-        }
-        #game-screen {
-            position: relative; width: 100vw; max-width: 1280px; aspect-ratio: 16 / 9;
-            background-color: #0a0a0a; overflow: hidden;
-            box-shadow: 0 0 100px rgba(0,0,0,1) inset;
-        }
-        .bg-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("subway.png"); background-size: cover; z-index: 1;
-        }
-        #flashlight {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle 130px at 50% 50%, rgba(255,255,245,0.2) 0%, rgba(0,0,0,0.85) 100%);
-            z-index: 5; pointer-events: none;
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* 엔딩 연출 */
-        #ghost-ending {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: none; z-index: 100; overflow: hidden;
-            flex-wrap: wrap; align-content: center; justify-content: center;
-            padding: 20px; box-sizing: border-box;
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 15px;
+            color: #800;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            margin-bottom: 50px;
+            text-align: center;
         }
-        .ghost-pattern {
-            color: #ff0000; font-size: clamp(20px, 4vw, 36px); font-weight: 900; 
-            line-height: 1.4; margin: 5px; animation: tremor 0.05s infinite;
-            text-shadow: 0 0 8px rgba(255, 0, 0, 0.6); text-align: center;
-        }
-        @keyframes tremor { 
-            0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } 
-        }
-        
-        .hotspot { position: absolute; cursor: pointer; z-index: 10; border: 1px dashed rgba(255,0,0,0.0); } 
 
-        /* 정밀 좌표 반영 */
-        #item-newspaper { width: 18%; height: 12%; top: 85%; left: 32%; } 
-        #item-hat { width: 8%; height: 8%; top: 76%; left: 65%; }          
-        #item-backpack { width: 10%; height: 15%; top: 62%; left: 56%; }   
-        #item-phone { width: 8%; height: 6%; top: 85%; left: 82%; }       
-        #item-note { width: 7%; height: 6%; top: 82%; left: 18%; }        
-        #door { width: 10%; height: 30%; top: 40%; left: 45%; }           
-
-        #message-box {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 85%; min-height: 110px; background: rgba(15, 15, 15, 0.95);
-            border: 1px solid #555; padding: 25px 20px 20px 20px; box-sizing: border-box; z-index: 30;
+        .container {
+            display: flex;
+            gap: 40px;
         }
-        #close-btn { position: absolute; top: 5px; right: 15px; color: #888; cursor: pointer; font-size: 28px; }
+
+        .chapter-card {
+            width: 280px;
+            height: 400px;
+            border: 1px solid #333;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            text-decoration: none;
+            overflow: hidden;
+        }
+
+        /* 지하철 카드 배경 (임시색상, 파일이 있다면 경로를 넣어주세요) */
+        .subway { background-image: linear-gradient(to top, rgba(0,0,0,1), transparent); }
+        /* 절 카드 배경 */
+        .temple { background-image: linear-gradient(to top, rgba(0,0,0,1), transparent); }
+
+        .chapter-card:hover {
+            border-color: #f00;
+            transform: translateY(-10px);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+        }
+
+        .chapter-info {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            text-align: center;
+        }
+
+        .chapter-title {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .chapter-desc {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(136, 0, 0, 0.1);
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .chapter-card:hover .overlay {
+            opacity: 1;
+        }
     </style>
 </head>
-<body onmousemove="moveFlashlight(event)">
+<body>
 
-<div id="game-screen">
-    <div class="bg-layer"></div>
-    <div id="flashlight"></div>
-    <div id="ghost-ending"></div>
-    
-    <div id="item-phone" class="hotspot" onclick="handleInteraction('phone')"></div>
-    <div id="item-hat" class="hotspot" onclick="handleInteraction('hat')"></div>
-    <div id="item-note" class="hotspot" onclick="handleInteraction('note')"></div>
-    <div id="item-newspaper" class="hotspot" onclick="handleInteraction('news')"></div>
-    <div id="item-backpack" class="hotspot" onclick="handleInteraction('backpack')"></div>
-    <div id="door" class="hotspot" onclick="handleInteraction('door')"></div>
+    <h1>ESCAPE</h1>
 
-    <div id="message-box">
-        <span id="close-btn" onclick="closeMessage()">×</span>
-        <div id="msg-text">열차가 멈췄다. 왠지 익숙한 풍경이다. 주변을 조사해봐야겠다.</div>
+    <div class="container">
+        <a href="subway.html" class="chapter-card subway">
+            <div class="overlay"></div>
+            <div class="chapter-info">
+                <div class="chapter-title">Chapter 1</div>
+                <div class="chapter-desc">지하철</div>
+            </div>
+        </a>
+
+        <a href="temple.html" class="chapter-card temple">
+            <div class="overlay"></div>
+            <div class="chapter-info">
+                <div class="chapter-title">Chapter 2</div>
+                <div class="chapter-desc">제단</div>
+            </div>
+        </a>
     </div>
-</div>
 
-<script>
-    let discoveredItems = new Set(); 
-    let isMemoryMode = false;        
-    let memoryStep = 0;              
-    let isFinalRealization = false; 
-
-    const normalDesc = {
-        phone: "액정이 깨진 핸드폰이다. 배터리가 없는지 켜지지 않는다.",
-        hat: "먼지 쌓인 갈색 모자다. 어린이대공원 로고가 보인다.",
-        note: "구겨진 종이 조각이다. 입장권인 것 같다.",
-        news: "오래된 신문지다. 날짜가 꽤 지난 것 같다.",
-        backpack: "낡은 배낭이다. 누군가 급하게 두고 간 것 같다."
-    };
-
-    // 요청하신 순서대로 재배치: 핸드폰 -> 모자 -> 표 -> 신문 -> 가방
-    const memorySteps = [
-        { id: 'phone', text: "핸드폰 액정 너머로 마지막 메시지가 떠오른다. '형, 살려줘.' 나는 그 목소리를 무시했다." },
-        { id: 'hat', text: "동생에게 사준 모자다. 챙에 묻은 건 피다. 그날, 비명소리가 승강장에 가득했다." },
-        { id: 'note', text: "내가 뺏었던 입장권이다. 동생이 집으로 도망치지 못하게 주머니에서 가로챘던 그 표다." },
-        { id: 'news', text: "'어린이대공원역 사고... 10대 소년 사망'. 내 이름이 목격자로 올라와 있다. 아니, 나는 가해자다." },
-        { id: 'backpack', text: "이건 내 동생의 가방이다. 안에서 녹슨 운전실 열쇠를 발견했다." }
-    ];
-
-    function moveFlashlight(e) {
-        const rect = document.getElementById('game-screen').getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        document.getElementById('flashlight').style.background = `radial-gradient(circle 130px at ${x}% ${y}%, rgba(255,255,245,0.2) 0%, rgba(0,0,0,0.85) 100%)`;
-    }
-
-    function updateMessage(text) {
-        document.getElementById('message-box').style.display = 'block';
-        document.getElementById('msg-text').innerHTML = text;
-    }
-
-    function closeMessage() { 
-        document.getElementById('message-box').style.display = 'none'; 
-        if (isFinalRealization) {
-            triggerGhostEnding();
-        }
-    }
-
-    function handleInteraction(itemId) {
-        if (!isMemoryMode) {
-            if (itemId === 'door') {
-                updateMessage("문이 잠겨 있다. 더 조사할 것이 남은 것 같다.");
-                return;
-            }
-            discoveredItems.add(itemId);
-            updateMessage(normalDesc[itemId]);
-
-            if (discoveredItems.size === 5) {
-                isMemoryMode = true; 
-            }
-        } 
-        else {
-            if (itemId === 'door') {
-                if (memoryStep >= 5) {
-                    isFinalRealization = true; 
-                    updateMessage("내가 동생을 밀쳤다. 이제 피할 수 없다.");
-                } else {
-                    updateMessage("문이 열리지 않는다. 머릿속이 복잡하다.");
-                }
-                return;
-            }
-
-            let alreadyUnlockedIndex = memorySteps.findIndex(step => step.id === itemId);
-            
-            if (alreadyUnlockedIndex !== -1 && alreadyUnlockedIndex < memoryStep) {
-                updateMessage(memorySteps[alreadyUnlockedIndex].text);
-            } 
-            else if (itemId === memorySteps[memoryStep].id) {
-                updateMessage(memorySteps[memoryStep].text);
-                memoryStep++;
-            } 
-            else {
-                updateMessage(normalDesc[itemId]);
-            }
-        }
-    }
-
-    function triggerGhostEnding() {
-        const ghostLayer = document.getElementById('ghost-ending');
-        const phrase = "왜 나를 밀쳤어? ";
-        ghostLayer.innerHTML = `<div class="ghost-pattern">${phrase.repeat(200)}</div>`;
-        ghostLayer.style.display = 'flex';
-        
-        setTimeout(() => {
-            alert("...헉! \n\n어린이대공원역 승강장에서 깨어났습니다. \n손에는 피 묻은 모자가 들려있습니다.");
-            try {
-                window.close(); 
-                document.body.innerHTML = `
-                    <div style="background:#000; color:#444; height:100vh; display:flex; 
-                         justify-content:center; align-items:center; font-family:sans-serif;">
-                        기억이 소멸되었습니다. 브라우저 탭을 직접 닫아주세요.
-                    </div>`;
-            } catch (e) {
-                console.log("창 닫기 실패:", e);
-            }
-        }, 4000);
-    }
-</script>
+    <p style="margin-top: 50px; color: #444; font-size: 0.8rem;">어느 쪽을 먼저 선택하시겠습니까?</p>
 
 </body>
 </html>
