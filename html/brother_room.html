@@ -117,6 +117,7 @@
         .shake-impact { animation: shake 0.1s 5; } 
         .ending-shake { animation: shake 0.05s infinite !important; }
         @keyframes flash-anim { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body onmousemove="moveFlashlight(event)">
@@ -170,10 +171,6 @@
         horrorDiaryChecked: false,
         closetOpened: false 
     };
-
-    function goToMain() {
-        if(confirm("메인 화면으로 돌아가시겠습니까?")) { window.location.href = '../index.html'; }
-    }
 
     function moveFlashlight(e) {
         if (flags.isHorror) return;
@@ -233,22 +230,29 @@
         const idx1 = selectedIndices[0];
         const idx2 = selectedIndices[1];
         const ids = [inventory[idx1].id, inventory[idx2].id];
-        let success = false;
+        let messageOverride = "";
 
-        if (ids.includes('mirror') && ids.includes('knife') && !flags.isHorror) {
-            triggerRitual();
-            inventory[ids.indexOf('mirror') === 0 ? idx1 : idx2] = null;
-            success = true;
+        if (ids.includes('mirror') && ids.includes('knife')) {
+            if (!flags.isHorror) {
+                triggerRitual();
+                inventory[inventory[idx1].id === 'mirror' ? idx1 : idx2] = null;
+                selectedIndices = [];
+                renderInventory();
+                return; // 함수 조기 종료
+            }
         } else if (ids.includes('talisman') && ids.includes('lighter')) {
             if (flags.isHorror) {
                 burnTalisman();
-                inventory[ids.indexOf('talisman') === 0 ? idx1 : idx2] = null;
-                success = true;
+                inventory[inventory[idx1].id === 'talisman' ? idx1 : idx2] = null;
+                selectedIndices = [];
+                renderInventory();
+                return;
             } else {
-                updateMessage("아직 부적을 태울 때가 아니다.");
+                messageOverride = "아직 부적을 태울 때가 아니다.";
             }
         }
-        if (!success) updateMessage("아무 일도 일어나지 않는다.");
+
+        updateMessage(messageOverride || "아무 일도 일어나지 않는다.");
         selectedIndices = [];
         renderInventory();
     }
@@ -266,7 +270,6 @@
         updateMessage("부적을 태우자 공포스러운 비명이 들려옵니다!");
     }
 
-    // --- 일기장 내용 원복 완료 ---
     function interactDiary() {
         const selected = selectedIndices.length === 1 ? inventory[selectedIndices[0]] : null;
         if (flags.isHorror) {
@@ -324,4 +327,3 @@
 </script>
 </body>
 </html>
-
