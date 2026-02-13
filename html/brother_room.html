@@ -38,19 +38,21 @@
         }
         .blood-active { display: block !important; animation: blood-burst 0.5s ease-out forwards; }
 
-        /* 대화창 (순서: 중간) */
         #message-box { height: 100px; width: 600px; background: #0f0f0f; border: 2px solid #333; padding: 15px; box-sizing: border-box; z-index: 20; }
         #msg-text { font-size: 0.95rem; line-height: 1.6; color: #ccc; }
 
-        /* 인벤토리 (순서: 맨 아래) */
         #inventory { height: 80px; width: 600px; display: flex; gap: 10px; padding: 5px; background: #050505; border: 2px solid #333; border-top: none; justify-content: center; z-index: 20; }
         .inv-slot { width: 70px; height: 70px; border: 1px solid #333; background: #111; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .inv-slot.selected { border: 2px solid var(--selected); box-shadow: inset 0 0 10px rgba(255,0,0,0.5); }
         .inv-slot img { width: 85%; height: 85%; object-fit: contain; }
 
         #game-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center; }
-        #modal-content { position: relative; width: 80%; height: 70%; background: #fdf5e6; border: 5px solid #8b4513; padding: 30px; box-sizing: border-box; }
+        #modal-content { position: relative; width: 80%; height: 70%; background: #fdf5e6; border: 5px solid #8b4513; padding: 30px; box-sizing: border-box; color: #333; line-height: 1.8; }
         #modal-content.horror-diary { background: #200; border-color: #f00; color: #f00; }
+
+        /* 붉게 변하는 비밀 암호 스타일 */
+        .secret-code { color: inherit; font-weight: inherit; transition: color 0.5s; }
+        .revealed .secret-code { color: #d00; font-weight: bold; text-shadow: 0 0 5px rgba(255,0,0,0.3); }
 
         #ending-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
         #ending-text { color: #f00; font-size: 1.8rem; font-weight: 900; margin-bottom: 40px; text-align: center; }
@@ -65,7 +67,6 @@
         .ending-shake { animation: shake 0.05s infinite !important; }
         @keyframes flash-anim { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
         .flash-active { animation: flash-anim 1.5s forwards; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body onmousemove="moveFlashlight(event)">
@@ -96,8 +97,7 @@
 
 <div id="inventory">
     <div id="slot-0" class="inv-slot" onclick="selectSlot(0)"></div>
-    <div id="slot-1" class="inv-slot" onclick="selectSlot(1)"></div>
-    <div id="slot-2" class="inv-slot" onclick="selectSlot(2)"></div>
+    <div id="slot-1" class="inv-slot" onclick="selectSlot(2)"></div> <div id="slot-2" class="inv-slot" onclick="selectSlot(1)"></div>
     <div id="slot-3" class="inv-slot" onclick="selectSlot(3)"></div>
 </div>
 
@@ -197,6 +197,7 @@
 
     function interactDiary() {
         const selected = selectedIndices.length === 1 ? inventory[selectedIndices[0]] : null;
+        
         if (flags.isHorror) {
             if (selected && selected.id === 'knife' && flags.talismanBurned) {
                 document.getElementById('blood-splash').classList.add('blood-active'); 
@@ -206,8 +207,21 @@
             }
             showModal(`<div style='font-size:1.1rem; line-height:1.2; animation: pulse 0.1s infinite;'>${"그만".repeat(150)}</div>`, true);
         } else {
-            if (selected && selected.id === 'lighter') flags.codeRevealed = true;
-            showModal(flags.codeRevealed ? "5120... 잊지 말아야 해." : "낡은 일기장이다. 글씨가 지워져 있다.");
+            const isLighterSelected = (selected && selected.id === 'lighter');
+            if (isLighterSelected) flags.codeRevealed = true;
+
+            const diaryHTML = `
+                <h3>5월 4일</h3>
+                <p class="${flags.codeRevealed ? 'revealed' : ''}">
+                    <span class="secret-code">오</span>늘의 
+                    <span class="secret-code">일</span>기는 어린이날이라 
+                    어린<span class="secret-code">이</span>날이라 어린이대
+                    <span class="secret-code">공</span>원에 가기로 했다.. 
+                    <br><br>
+                    <span style="color:rgba(150,0,0,0.6);">(뒷 내용은 핏자국 때문에 보이지 않는다.)</span>
+                </p>
+            `;
+            showModal(diaryHTML);
         }
     }
 
@@ -215,6 +229,7 @@
     function interactCloset() { 
         const code = prompt("암호:");
         if (code === "5120") pickUpItem('knife', '의식용 칼');
+        else if (code !== null) alert("틀렸다.");
     }
 
     function showModal(html, isHorror = false) {
