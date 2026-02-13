@@ -21,7 +21,7 @@
         /* 핫스팟 기본 커서: 손가락 모양 */
         .hotspot { position: absolute; z-index: 10; cursor: pointer; }
         /* 획득 후 또는 완료 후: 기본 화살표로 변경 및 클릭 무시 */
-        .hotspot.completed { cursor: default; pointer-events: none; }
+        .hotspot.completed { cursor: default !important; }
 
         #lighter-on-bed { top: 55%; left: 15%; width: 10%; height: 8%;}
         #drawer-area { top: 72%; left: 75%; width: 15%; height: 10%;}
@@ -115,7 +115,7 @@
         codeRevealed: false, 
         itemsPicked: {}, 
         horrorDiaryChecked: false,
-        closetOpened: false // 금고(옷장) 상태 추가
+        closetOpened: false // 금고 열림 상태
     };
 
     function goToMain() {
@@ -138,8 +138,8 @@
             inventory[emptyIdx] = { id, name, img: `../assets/items/${id}.png` };
             flags.itemsPicked[id] = true;
             
-            // 획득 시 시각적 처리 및 커서 변경
-            const target = document.getElementById(getHotspotIdByItem(id));
+            const targetId = getHotspotIdByItem(id);
+            const target = document.getElementById(targetId);
             if (target) {
                 target.classList.add('completed');
                 if (id === 'talisman' || id === 'lighter') target.style.opacity = '0';
@@ -150,7 +150,6 @@
         }
     }
 
-    // 아이템 ID에 따른 핫스팟 ID 매칭 보조 함수
     function getHotspotIdByItem(id) {
         const mapping = { 'lighter': 'lighter-on-bed', 'talisman': 'talisman-on-wall', 'mirror': 'drawer-area', 'knife': 'closet-area' };
         return mapping[id];
@@ -275,20 +274,29 @@
         pickUpItem('mirror', '거울'); 
     }
 
+    // --- 수정된 금고 함수 ---
     function interactCloset() { 
-        // 이미 열린 경우
+        // 1. 이미 열렸다면 다시 묻지 않고 메시지만 출력
         if (flags.closetOpened) {
             updateMessage("이미 열린 금고입니다.");
             return;
         }
 
+        // 2. 안 열렸을 때만 암호 묻기
         const code = prompt("암호:");
+        
+        // 취소 버튼 눌렀을 때 처리
+        if (code === null) return;
+
         if (code === "5120") {
-            updateMessage("금고가 열렸습니다.");
-            flags.closetOpened = true; // 금고 상태 변경
-            // 아이템 획득 시 커서 변경은 pickUpItem 내에서 처리됨
-            pickUpItem('knife', '의식용 칼');
-        } else if (code !== null) {
+            flags.closetOpened = true; // 상태를 먼저 변경
+            updateMessage("금고가 열렸습니다. 안에서 칼을 발견했다.");
+            pickUpItem('knife', '의식용 칼'); // 아이템 획득
+            
+            // 획득 후 커서 변경을 명시적으로 한 번 더 처리
+            const closetArea = document.getElementById('closet-area');
+            if (closetArea) closetArea.classList.add('completed');
+        } else {
             alert("틀렸다.");
         }
     }
